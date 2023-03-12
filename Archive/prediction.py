@@ -1,34 +1,99 @@
-# Starter code for CS 165B HW4
-
-"""
-Implement the testing procedure here. 
-
-Inputs:
-    Unzip the hw4_test.zip and place the folder named "hw4_test" in the same directory of your "prediction.py" file, your "prediction.py" need to give the following required output.
-
-Outputs:
-    A file named "prediction.txt":
-        * The prediction file must have 10000 lines because the testing dataset has 10000 testing images.
-        * Each line is an integer prediction label (0 - 9) for the corresponding testing image.
-        * The prediction results must follow the same order of the names of testing images (0.png – 9999.png).
-    Notes: 
-        1. The teaching staff will run your "prediction.py" to obtain your "prediction.txt" after the competition ends.
-        2. The output "prediction.txt" must be the same as the final version you submitted to the CodaLab, 
-        otherwise you will be given 0 score for your hw4.
+# CS165B HW4 - Katyayani G. Raman (4803987)
 
 
-**!!!!!!!!!!Important Notes!!!!!!!!!!**
-    To open the folder "hw4_test" or load other related files, 
-    please use open('./necessary.file') instead of open('some/randomly/local/directory/necessary.file').
-
-    For instance, in the student Jupyter's local computer, he stores the source code like:
-    - /Jupyter/Desktop/cs165B/hw4/prediction.py
-    - /Jupyter/Desktop/cs165B/hw4/hw4_test
-    If he/she use os.chdir('/Jupyter/Desktop/cs165B/hw4/hw4_test'), this will cause an IO error 
-    when the teaching staff run his code under other system environments.
-    Instead, he should use os.chdir('./hw4_test').
+# IMPORTS
+import os
+from PIL import Image
+from tensorflow.keras import datasets, layers, models
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropout 
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import numpy as np
 
 
-    If you use your local directory, your code will report an IO error when the teaching staff run your code,
-    which will cause 0 score for your hw4.
-"""
+
+def get_data(folder_path):
+    filenames = os.listdir(folder_path)
+    filenames = [f for f in filenames if not f.startswith('.DS_Store')]
+
+    # initialize empty lists to hold training images and labels
+    images = np.array([])
+    labels = np.array([])
+
+    # loop over each subfolder in the folder path
+    for subfolder in os.listdir(folder_path):
+        # construct full path for the subfolder
+        subfolder_path = os.path.join(folder_path, subfolder)
+        # check if the subfolder is a directory
+        if os.path.isdir(subfolder_path):
+            # convert the subfolder name to an integer label
+            label_num = int(subfolder)
+            # loop over each image file in the subfolder
+            for sample_image in os.listdir(subfolder_path):
+                # check if the file is a PNG image
+                if sample_image.endswith('.png'):
+                    # construct full file path for the image
+                    image_path = os.path.join(subfolder_path, sample_image)
+                    # open the image file using PIL and extract its pixel data
+                    image = Image.open(image_path)
+                    vector_image = np.array(image.getdata())      
+                    # append the pixel data and corresponding label to the training or testing lists
+                    images.append(vector_image)
+                    labels.append(label_num)
+    return images, labels
+
+#GETTING TRAINING + TESTING DATA: 
+folder_path_training = './hw4_train'
+folder_path_testing = './hw4_test'
+train_images, train_labels = get_data(folder_path_training)
+test_images, test_labels = get_data(folder_path_testing)
+
+class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+               'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+
+#PRE-PROCESSING
+#scaling values to be within the range (0,1)
+train_images = train_images / 255.0
+test_images = test_images / 255.0
+
+#BUILDING MODEL: 
+
+# model 1
+model = tf.keras.Sequential([
+  tf.keras.layers.Conv2D(64, kernel_size=(7, 7), input_shape=(28,28,1), activation="relu"),
+  tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
+  tf.keras.layers.Conv2D(128, kernel_size=(3, 3), activation="relu"),
+  tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
+  tf.keras.layers.Conv2D(256, kernel_size=(3, 3), activation="relu"),
+  tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
+  tf.keras.layers.Flatten(),
+  tf.keras.layers.Dropout(0.5),
+  tf.keras.layers.Dense(10, activation='softmax')
+])
+
+# #model 2: 
+# model = tf.keras.Sequential([
+#     tf.keras.layers.Flatten(input_shape=image_shape),
+#     tf.keras.layers.Dense(128, activation='relu'),
+#     tf.keras.layers.Dense(10)
+# ])
+
+#COMPILING + TRAINING THE MODEL: 
+model.compile(optimizer='adam',
+              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+              metrics=['accuracy'])
+model.fit(train_images, train_labels, epochs=10)
+
+#EVALUATION:
+results = model.evaluate(test_images,  test_labels, verbose=2)
+predictions = model.predict(test_images)
+predictions = [np.argmax(predictions[index]) for index in range(len(predictions))]
+
+#WRITE PREDICTIONS TO OUTPUT FILE
+with open('prediction.txt', 'a') as file:
+    for prediction in predictions:
+        file.write(str(prediction) + '\n')
+
+
+
+
