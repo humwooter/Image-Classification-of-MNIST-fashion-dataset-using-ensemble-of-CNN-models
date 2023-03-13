@@ -88,7 +88,9 @@ model.fit(train_images, train_labels, epochs=10)
 
 #EVALUATION:
 test_images = np.reshape(test_images, (test_images.shape[0], 28, 28, 1))
-results = model.evaluate(test_images,  test_labels, verbose=2)
+results = ["empty"]
+if (len(test_images) != 0):
+    results = model.evaluate(test_images,  test_labels, verbose=2)
 print(results)
 predictions = model.predict(test_images)
 predictions = [np.argmax(predictions[index]) for index in range(len(predictions))]
