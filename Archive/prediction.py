@@ -1,4 +1,5 @@
 # CS165B HW4 - Katyayani G. Raman (4803987)
+#hubs
 
 
 # IMPORTS
@@ -17,8 +18,8 @@ def get_data(folder_path):
     filenames = [f for f in filenames if not f.startswith('.DS_Store')]
 
     # initialize empty lists to hold training images and labels
-    images = np.array([])
-    labels = np.array([])
+    images = []
+    labels = []
 
     # loop over each subfolder in the folder path
     for subfolder in os.listdir(folder_path):
@@ -36,11 +37,12 @@ def get_data(folder_path):
                     image_path = os.path.join(subfolder_path, sample_image)
                     # open the image file using PIL and extract its pixel data
                     image = Image.open(image_path)
-                    vector_image = np.array(image.getdata())      
+                    image_array = np.array(image)
+                    vector_image = np.array(image.getdata())
                     # append the pixel data and corresponding label to the training or testing lists
-                    images.append(vector_image)
+                    images.append(image_array)
                     labels.append(label_num)
-    return images, labels
+    return np.array(images), np.array(labels)
 
 #GETTING TRAINING + TESTING DATA: 
 folder_path_training = './hw4_train'
@@ -85,7 +87,7 @@ model.compile(optimizer='adam',
 model.fit(train_images, train_labels, epochs=10)
 
 #EVALUATION:
-results = model.evaluate(test_images,  test_labels, verbose=2)
+#results = model.evaluate(test_images,  test_labels, verbose=2)
 predictions = model.predict(test_images)
 predictions = [np.argmax(predictions[index]) for index in range(len(predictions))]
 
