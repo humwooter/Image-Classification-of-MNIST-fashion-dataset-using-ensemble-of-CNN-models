@@ -17,8 +17,8 @@ def get_data(folder_path):
     filenames = [f for f in filenames if not f.startswith('.DS_Store')]
 
     # initialize empty lists to hold training images and labels
-    images = np.array([])
-    labels = np.array([])
+    images = []
+    labels = []
 
     # loop over each subfolder in the folder path
     for subfolder in os.listdir(folder_path):
@@ -36,17 +36,23 @@ def get_data(folder_path):
                     image_path = os.path.join(subfolder_path, sample_image)
                     # open the image file using PIL and extract its pixel data
                     image = Image.open(image_path)
+                    image_array = np.array(image)
                     vector_image = np.array(image.getdata())      
                     # append the pixel data and corresponding label to the training or testing lists
-                    images.append(vector_image)
+                    images.append(image_array)
                     labels.append(label_num)
-    return images, labels
+    return np.array(images), np.array(labels)
 
 #GETTING TRAINING + TESTING DATA: 
 folder_path_training = './hw4_train'
 folder_path_testing = './hw4_test'
+
 train_images, train_labels = get_data(folder_path_training)
 test_images, test_labels = get_data(folder_path_testing)
+
+
+# print(train_images.shape)
+# print(train_images[0].shape)
 
 class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
                'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
@@ -56,43 +62,55 @@ class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
 train_images = train_images / 255.0
 test_images = test_images / 255.0
 
+print(train_images, "train_images")
+print(test_images, "test_images")
+
 #BUILDING MODEL: 
 
-# model 1
-model = tf.keras.Sequential([
-  tf.keras.layers.Conv2D(64, kernel_size=(7, 7), input_shape=(28,28,1), activation="relu"),
-  tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
-  tf.keras.layers.Conv2D(128, kernel_size=(3, 3), activation="relu"),
-  tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
-  tf.keras.layers.Conv2D(256, kernel_size=(3, 3), activation="relu"),
-  tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
-  tf.keras.layers.Flatten(),
-  tf.keras.layers.Dropout(0.5),
-  tf.keras.layers.Dense(10, activation='softmax')
-])
-
-# #model 2: 
+# # model 1
 # model = tf.keras.Sequential([
-#     tf.keras.layers.Flatten(input_shape=image_shape),
-#     tf.keras.layers.Dense(128, activation='relu'),
-#     tf.keras.layers.Dense(10)
+#   tf.keras.layers.Conv2D(64, kernel_size=(7, 7), input_shape=(28,28,1), activation="relu"),
+#   tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
+#   tf.keras.layers.Conv2D(128, kernel_size=(3, 3), activation="relu"),
+#   tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
+#   tf.keras.layers.Conv2D(256, kernel_size=(3, 3), activation="relu"),
+#   tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
+#   tf.keras.layers.Flatten(),
+#   tf.keras.layers.Dropout(0.5),
+#   tf.keras.layers.Dense(10, activation='softmax')
 # ])
+
+#model 2: 
+model = tf.keras.Sequential([
+    tf.keras.layers.Flatten(input_shape=train_images.shape),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(10), 
+    tf.keras.layers.Softmax()
+    ])
+
+
 
 #COMPILING + TRAINING THE MODEL: 
 model.compile(optimizer='adam',
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
+
+#TRAIN MODEL: 
 model.fit(train_images, train_labels, epochs=10)
 
 #EVALUATION:
-results = model.evaluate(test_images,  test_labels, verbose=2)
+# test_images = np.reshape(test_images, (test_images.shape[0], 28, 28, 1))
+
+results = model.evaluate(test_images, test_labels, verbose=0)
+
+print(results)
 predictions = model.predict(test_images)
 predictions = [np.argmax(predictions[index]) for index in range(len(predictions))]
 
 #WRITE PREDICTIONS TO OUTPUT FILE
-with open('prediction.txt', 'a') as file:
-    for prediction in predictions:
-        file.write(str(prediction) + '\n')
+# with open('prediction.txt', 'a') as file:
+#     for prediction in predictions:
+#         file.write(str(prediction) + '\n')
 
 
 
