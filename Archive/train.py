@@ -92,22 +92,78 @@ X_val = X_val / 255.0
 # Reshape the input data to have a rank of 4
 train_images = np.reshape(train_images, (-1, 28, 28, 1))
 
-models = [tf.keras.models.load_model('model_1C.h5'), tf.keras.models.load_model('model_2C.h5'),
-          tf.keras.models.load_model('model_3C.h5'), tf.keras.models.load_model('model_4C.h5'), 
-          tf.keras.models.load_model('model_5C.h5')
-          ]
-predictions = []
+#Define models
+model_1 = tf.keras.Sequential([
+  tf.keras.layers.Conv2D(64, kernel_size=(3, 3), input_shape=(28,28,1), activation="relu"),
+  tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
+  tf.keras.layers.Conv2D(64, kernel_size=(3, 3), input_shape=(28,28,1), activation="relu"),
+  tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
+  tf.keras.layers.Flatten(input_shape=train_images.shape),
+  tf.keras.layers.Dense(128, activation='relu'),
+  tf.keras.layers.Dense(10, activation='softmax')
+])
 
 
-for i, model in enumerate(models):
-    prediction = model.predict(test_images)
-    predictions.append(prediction)
+model_2 = tf.keras.Sequential([
+    tf.keras.layers.Conv2D(32, kernel_size=(3, 3), input_shape=(28,28,1), activation="relu"),
+    tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
+    tf.keras.layers.Flatten(input_shape=train_images.shape),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(10, activation='softmax')
+])
 
-predictions = np.asarray(predictions)
+model_3 = tf.keras.Sequential([
+    tf.keras.layers.Conv2D(128, kernel_size=(3, 3), input_shape=(28,28,1), activation="relu"),
+    tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
+    tf.keras.layers.Conv2D(128, kernel_size=(3, 3), input_shape=(28,28,1), activation="relu"),
+    tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
+    tf.keras.layers.Flatten(input_shape=train_images.shape),
+    tf.keras.layers.Dense(256, activation='relu'),
+    tf.keras.layers.Dense(10, activation='softmax')
+])
 
-ensemble_pred = np.argmax(np.sum(predictions, axis=0), axis=1)
+model_4 = tf.keras.Sequential([
+    tf.keras.layers.Conv2D(32, kernel_size=(3, 3), input_shape=(28,28,1), activation="relu"),
+    tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
+    tf.keras.layers.Conv2D(64, kernel_size=(3, 3), input_shape=(28,28,1), activation="relu"),
+    tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
+    tf.keras.layers.Flatten(input_shape=train_images.shape),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(10, activation='softmax')
+])
 
-# Save the ensemble predictions to an output file
-with open('prediction.txt', 'a') as file:
-    for prediction in ensemble_pred:
-        file.write(str(prediction) + '\n')
+model_5 = tf.keras.Sequential([
+    tf.keras.layers.Conv2D(32, kernel_size=(3, 3), input_shape=(28,28,1), activation="relu"),
+    tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
+    tf.keras.layers.Conv2D(32, kernel_size=(3, 3), input_shape=(28,28,1), activation="relu"),
+    tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=2),
+    tf.keras.layers.Flatten(input_shape=train_images.shape),
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(10, activation='softmax')
+])
+
+
+# Compile the models
+opt = tf.keras.optimizers.Adam(learning_rate=0.0001)
+
+model_1.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+model_2.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+model_3.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+model_4.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+model_5.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+# Train the models
+history_1 = model_1.fit(train_images, train_labels, batch_size=128, epochs=30, verbose = 1, validation_data=(X_val, y_val))
+model_1.save('model_1C_test.h5')
+
+history_2 = model_2.fit(train_images, train_labels, batch_size=128, epochs=30, verbose = 1, validation_data=(X_val, y_val))
+model_2.save('model_2C_test.h5')
+
+history_3 = model_3.fit(train_images, train_labels, batch_size=128, epochs=30, verbose = 1, validation_data=(X_val, y_val))
+model_3.save('model_3C_test.h5')
+
+history_4 = model_4.fit(train_images, train_labels, batch_size=128, epochs=30, verbose = 1, validation_data=(X_val, y_val))
+model_3.save('model_4C_test.h5')
+
+history_5 = model_5.fit(train_images, train_labels, batch_size=128, epochs=30, verbose = 1, validation_data=(X_val, y_val))
+model_5.save('model_5C_test.h5')
